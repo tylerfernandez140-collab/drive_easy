@@ -44,6 +44,12 @@ export default function AdminLayout({ header, children }) {
                                 >
                                     Manage Materials
                                 </NavLink>
+                                <NavLink
+                                    href={route('admin.landing')}
+                                    active={route().current('admin.landing')}
+                                >
+                                    Landing Page Management
+                                </NavLink>
 
                             </div>
                         </div>

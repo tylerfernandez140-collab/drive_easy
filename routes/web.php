@@ -1,15 +1,19 @@
 <?php
 
+use App\Http\Controllers\HeroController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Schedule;
 use App\Models\StudentApplication;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Models\Hero;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+     $hero = Hero::first();
     return Inertia::render('Welcome', [
+        'hero' => $hero,
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
@@ -47,6 +51,11 @@ Route::get('/dashboard', function () {
 Route::get('/admin/dashboard', function () {
     return Inertia::render('Admin/Dashboard');
 })->middleware(['auth', 'verified', 'admin'])->name('admin.dashboard');
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/landing-page', [HeroController::class, 'index'])->name('admin.landing');
+    Route::post('/admin/landing-page/update', [HeroController::class, 'update'])->name('admin.landing.update');
+});
 
 
 Route::get('/instructor/dashboard', function () {
