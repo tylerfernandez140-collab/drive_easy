@@ -1,22 +1,24 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import {
-    HiOutlineCalendarDays,
-    HiOutlineClock,
-    HiOutlineUser,
-    HiOutlineMapPin,
-    HiOutlineBookOpen,
-    HiOutlinePlusCircle,
-    HiOutlineCheckCircle,
-    HiOutlineXCircle
-} from 'react-icons/hi2';
+import { useEffect, useMemo, useState } from 'react';
 import ExistingSchedules from '@/Components/sections/ExistingSchedules';
-import { formatDate, formatTime } from '@/lib/dateFormatter';
 import { groupByDate } from '@/utils/groupByDate';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function Schedules({ instructors = [], registrations = [], schedules = [], student }) {
+const FIXED_SLOTS = [
+    { label: '08:00 – 10:00 AM', value: '08:00' },
+    { label: '10:00 – 12:00 NN', value: '10:00' },
+    { label: '01:00 – 03:00 PM', value: '13:00' },
+    { label: '03:00 – 05:00 PM', value: '15:00' },
+];
+
+export default function Schedules({
+    instructors = [],
+    registrations = [],
+    schedules = [],
+    vehicles = [],
+    slots = FIXED_SLOTS,
+}) {
     const { data, setData, post, reset, processing, errors } = useForm({
         instructor_id: '',
         course_registration_id: '',
@@ -24,63 +26,169 @@ export default function Schedules({ instructors = [], registrations = [], schedu
         time: '',
         location: '',
         description: '',
+        vehicle_id: '',
     });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        post(route("admin.schedules.store"), {
-            preserveScroll: true,
-            onSuccess: () => {
-                reset();
-                toast.success("Schedule saved successfully!", { duration: 3000 });
-            },
-            onError: () => {
-                toast.error("Failed to save schedule.");
-            },
-        });
-    };
-
-    const handleTimeChange = (e) => {
-        const selectedTime = e.target.value;
-        if (selectedTime >= "08:00" && selectedTime <= "17:00") {
-            setData("time", selectedTime);
-        } else {
-            toast.error("Please select a time between 8:00 AM and 5:00 PM (Philippine Time).");
-        }
-    };
-
-    const groupedTheoretical = groupByDate(
-        schedules.filter((s) => s.course_registration?.course_type === "Theoretical")
-    );
-
-    const groupedPractical = groupByDate(
-        schedules.filter((s) => s.course_registration?.course_type === "Practical")
-    );
 
     const [selectedSchedule, setSelectedSchedule] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
-    const scheduledIds = new Set(schedules.map(s => s.course_registration_id));
 
+    // already scheduled registrations (your old behavior)
+    const scheduledIds = useMemo(
+        () => new Set(schedules.map((s) => s.course_registration_id)),
+        [schedules]
+    );
+
+    // group for right panel
+    const groupedTheoretical = groupByDate(
+        schedules.filter((s) => s.course_registration?.course_type === 'Theoretical')
+    );
+    const groupedPractical = groupByDate(
+        schedules.filter((s) => s.course_registration?.course_type === 'Practical')
+    );
+
+    // detect selected registration
+    const selectedReg = registrations.find(
+        (r) => Number(r.id) === Number(data.course_registration_id)
+    );
+
+    // is this theoretical? → no time, no vehicle
+    const isTheoretical =
+        !!selectedReg && selectedReg.course_type?.toLowerCase() === 'theoretical';
+
+    // 1) date+time availability filter
+    const [availableVehicles, setAvailableVehicles] = useState(vehicles);
+
+    useEffect(() => {
+        // if theoretical or no date/time → show all
+        if (!data.date || !data.time || isTheoretical) {
+            setAvailableVehicles(vehicles);
+            return;
+        }
+
+        const normalize = (t) => (t ? t.slice(0, 5) : t);
+
+        const usedVehicleIds = schedules
+            .filter(
+                (s) =>
+                    s.date === data.date &&
+                    normalize(s.time) === data.time // compare 08:00:00 vs 08:00
+            )
+            .map((s) => s.vehicle_id)
+            .filter(Boolean);
+
+        const filtered = vehicles.filter((v) => !usedVehicleIds.includes(v.id));
+        setAvailableVehicles(filtered);
+
+        if (data.vehicle_id && usedVehicleIds.includes(Number(data.vehicle_id))) {
+            setData('vehicle_id', '');
+        }
+    }, [data.date, data.time, schedules, vehicles, data.vehicle_id, setData, isTheoretical]);
+
+    // 2) course-type-aware filter
+    const vehiclesForSelectedCourse = useMemo(() => {
+        // theoretical → no vehicle
+        if (isTheoretical) return [];
+
+        const all = availableVehicles || [];
+
+        // helper
+        const isVehicleFreeNow = (vehicle) => {
+            if (vehicle.status && vehicle.status !== 'available') return false;
+
+            if (!vehicle.unavailable_until) return true;
+
+            const now = new Date();
+            const until = new Date(vehicle.unavailable_until);
+            return until <= now; // past → free
+        };
+
+        // 1. filter by course type first (so unavailable ones of that type still show)
+        const filterByCourse = (list) => {
+            if (!selectedReg) return list;
+
+            const courseType = selectedReg.course_type?.toLowerCase() ?? '';
+
+            const isMotorcycle =
+                courseType.includes('motorcycle') ||
+                courseType.includes('mc') ||
+                courseType.includes('2-wheel');
+
+            if (isMotorcycle) {
+                return list.filter(
+                    (v) => v.type === 'motorcycle' || v.type === 'motorcycle_sidecar'
+                );
+            }
+
+            if (courseType.includes('practical')) {
+                return list;
+            }
+
+            return list;
+        };
+
+        const courseFiltered = filterByCourse(all);
+
+        // 2. split
+        const available = courseFiltered.filter(isVehicleFreeNow);
+        const unavailable = courseFiltered.filter((v) => !isVehicleFreeNow(v));
+
+        // 3. return both (available first)
+        return [...available, ...unavailable];
+    }, [isTheoretical, selectedReg, availableVehicles]);
+
+
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // if theoretical → send empty time/vehicle
+        const payload = isTheoretical
+            ? {
+                ...data,
+                time: '',
+                vehicle_id: '',
+            }
+            : data;
+
+        post(route('admin.schedules.store'), {
+            data: payload,
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                toast.success('Schedule saved successfully!', { duration: 3000 });
+            },
+            onError: () => {
+                toast.error('Failed to save schedule.');
+            },
+        });
+    };
 
     return (
         <AdminLayout>
             <Head title="Schedules" />
             <Toaster position="top-center" reverseOrder={false} />
+
             <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row items-start md:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Training Schedules</h1>
-                        <p className="mt-1 text-sm text-gray-500">Manage and assign training schedules for students</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Manage and assign training schedules for students
+                        </p>
                     </div>
                 </div>
+
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-10">
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-semibold text-gray-800">Create New Schedule</h2>
-                        <p className="text-sm text-gray-500 mt-1">Fill in the details to assign a new training session</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Fill in the details to assign a new training session
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Instructor */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-gray-700">Instructor</label>
                                 <select
@@ -95,55 +203,127 @@ export default function Schedules({ instructors = [], registrations = [], schedu
                                         </option>
                                     ))}
                                 </select>
-                                {errors.instructor_id && <p className="text-red-500 text-xs mt-1">{errors.instructor_id}</p>}
+                                {errors.instructor_id && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.instructor_id}</p>
+                                )}
                             </div>
 
+                            {/* Student */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-gray-700">Student</label>
                                 <select
                                     value={data.course_registration_id}
-                                    onChange={(e) => setData('course_registration_id', e.target.value)}
+                                    onChange={(e) => {
+                                        // change course → reset time + vehicle
+                                        setData((prev) => ({
+                                            ...prev,
+                                            course_registration_id: e.target.value,
+                                            time: '',
+                                            vehicle_id: '',
+                                        }));
+                                    }}
                                     className="mt-1 block cursor-pointer w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
                                 >
                                     <option value="">Select Student</option>
                                     {registrations
-                                        .filter(reg => !scheduledIds.has(reg.id))
+                                        .filter((reg) => !scheduledIds.has(reg.id))
                                         .map((reg) => (
                                             <option key={reg.id} value={reg.id}>
-                                                {reg.user?.name ?? 'No Student'} - {reg.course_type}
+                                                {reg.user?.name ??
+                                                    reg.student_application?.user?.name ??
+                                                    'No Student'}{' '}
+                                                - {reg.course_type}
                                             </option>
                                         ))}
                                 </select>
-                                {errors.course_registration_id && <p className="text-red-500 text-xs mt-1">{errors.course_registration_id}</p>}
+                                {errors.course_registration_id && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.course_registration_id}</p>
+                                )}
                             </div>
 
-
+                            {/* Date */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-gray-700">Date</label>
                                 <input
                                     type="date"
                                     value={data.date}
                                     onChange={(e) => setData('date', e.target.value)}
-                                    min={new Date().toISOString().split("T")[0]}
+                                    min={new Date().toISOString().split('T')[0]}
                                     className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
                                 />
                                 {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Time</label>
-                                <input
-                                    type="time"
-                                    value={data.time}
-                                    onChange={handleTimeChange}
-                                    min="08:00"
-                                    max="17:00"
-                                    className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
-                                />
+                            {/* Time slot – ONLY if not theoretical */}
+                            {!isTheoretical && (
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Time Slot</label>
+                                    <select
+                                        value={data.time}
+                                        onChange={(e) => setData('time', e.target.value)}
+                                        className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
+                                    >
+                                        <option value="">Select time slot</option>
+                                        {slots.map((slot) => (
+                                            <option key={slot.value} value={slot.value}>
+                                                {slot.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
+                                </div>
+                            )}
 
-                                {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
-                            </div>
+                            {/* Vehicle – ONLY if not theoretical */}
+                            {!isTheoretical && (
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Vehicle</label>
 
+                                    <select
+                                        value={data.vehicle_id}
+                                        onChange={(e) => setData('vehicle_id', e.target.value)}
+                                        className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
+                                    >
+                                        <option value="">Select vehicle</option>
+
+                                        {vehiclesForSelectedCourse.map((vehicle) => {
+                                            const isUnavailable =
+                                                vehicle.status !== 'available' ||
+                                                (vehicle.unavailable_until &&
+                                                    new Date(vehicle.unavailable_until) > new Date());
+
+                                            // Format display time
+                                            let label = `${vehicle.name} (${vehicle.type.replace(/_/g, ' ')})`;
+                                            if (isUnavailable && vehicle.unavailable_until) {
+                                                const until = new Date(vehicle.unavailable_until);
+                                                const localTime = until.toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                });
+                                                label += ` – unavailable until ${localTime}`;
+                                            }
+
+                                            return (
+                                                <option
+                                                    key={vehicle.id}
+                                                    value={vehicle.id}
+                                                    disabled={isUnavailable} // disable unavailable ones
+                                                >
+                                                    {label}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+
+                                    {errors.vehicle_id && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.vehicle_id}</p>
+                                    )}
+                                </div>
+
+
+                            )}
+
+                            {/* Location */}
                             <div className="space-y-2 md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Location</label>
                                 <input
@@ -156,6 +336,7 @@ export default function Schedules({ instructors = [], registrations = [], schedu
                                 {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
                             </div>
 
+                            {/* Description */}
                             <div className="space-y-2 md:col-span-3">
                                 <label className="block text-sm font-medium text-gray-700">Description</label>
                                 <textarea
@@ -165,7 +346,9 @@ export default function Schedules({ instructors = [], registrations = [], schedu
                                     placeholder="Training description, objectives, etc."
                                     className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
                                 />
-                                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+                                {errors.description && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+                                )}
                             </div>
                         </div>
 
@@ -177,9 +360,25 @@ export default function Schedules({ instructors = [], registrations = [], schedu
                             >
                                 {processing ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
                                         </svg>
                                         Processing...
                                     </>
@@ -190,6 +389,7 @@ export default function Schedules({ instructors = [], registrations = [], schedu
                         </div>
                     </form>
                 </div>
+
                 <ExistingSchedules
                     schedules={schedules}
                     groupedTheoretical={groupedTheoretical}

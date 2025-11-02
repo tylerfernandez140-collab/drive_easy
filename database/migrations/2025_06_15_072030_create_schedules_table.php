@@ -9,8 +9,9 @@ return new class extends Migration {
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('vehicle_id')->nullable(); 
             $table->date('date');
-            $table->string('time');
+            $table->string('time')->nullable();
             $table->foreignId('instructor_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('course_registration_id')->nullable()->constrained()->onDelete('cascade'); 
             $table->string('location');
