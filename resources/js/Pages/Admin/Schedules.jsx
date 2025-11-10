@@ -32,13 +32,11 @@ export default function Schedules({
     const [selectedSchedule, setSelectedSchedule] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
 
-    // already scheduled registrations (your old behavior)
     const scheduledIds = useMemo(
         () => new Set(schedules.map((s) => s.course_registration_id)),
         [schedules]
     );
 
-    // group for right panel
     const groupedTheoretical = groupByDate(
         schedules.filter((s) => s.course_registration?.course_type === 'Theoretical')
     );
@@ -46,20 +44,16 @@ export default function Schedules({
         schedules.filter((s) => s.course_registration?.course_type === 'Practical')
     );
 
-    // detect selected registration
     const selectedReg = registrations.find(
         (r) => Number(r.id) === Number(data.course_registration_id)
     );
 
-    // is this theoretical? → no time, no vehicle
     const isTheoretical =
         !!selectedReg && selectedReg.course_type?.toLowerCase() === 'theoretical';
 
-    // 1) date+time availability filter
     const [availableVehicles, setAvailableVehicles] = useState(vehicles);
 
     useEffect(() => {
-        // if theoretical or no date/time → show all
         if (!data.date || !data.time || isTheoretical) {
             setAvailableVehicles(vehicles);
             return;
@@ -71,7 +65,7 @@ export default function Schedules({
             .filter(
                 (s) =>
                     s.date === data.date &&
-                    normalize(s.time) === data.time // compare 08:00:00 vs 08:00
+                    normalize(s.time) === data.time
             )
             .map((s) => s.vehicle_id)
             .filter(Boolean);
@@ -84,14 +78,11 @@ export default function Schedules({
         }
     }, [data.date, data.time, schedules, vehicles, data.vehicle_id, setData, isTheoretical]);
 
-    // 2) course-type-aware filter
     const vehiclesForSelectedCourse = useMemo(() => {
-        // theoretical → no vehicle
         if (isTheoretical) return [];
 
         const all = availableVehicles || [];
 
-        // helper
         const isVehicleFreeNow = (vehicle) => {
             if (vehicle.status && vehicle.status !== 'available') return false;
 
@@ -99,10 +90,9 @@ export default function Schedules({
 
             const now = new Date();
             const until = new Date(vehicle.unavailable_until);
-            return until <= now; // past → free
+            return until <= now;
         };
 
-        // 1. filter by course type first (so unavailable ones of that type still show)
         const filterByCourse = (list) => {
             if (!selectedReg) return list;
 
@@ -128,11 +118,9 @@ export default function Schedules({
 
         const courseFiltered = filterByCourse(all);
 
-        // 2. split
         const available = courseFiltered.filter(isVehicleFreeNow);
         const unavailable = courseFiltered.filter((v) => !isVehicleFreeNow(v));
 
-        // 3. return both (available first)
         return [...available, ...unavailable];
     }, [isTheoretical, selectedReg, availableVehicles]);
 
@@ -141,14 +129,13 @@ export default function Schedules({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // if theoretical → send empty time/vehicle
         const payload = isTheoretical
             ? {
                 ...data,
-                time: '',
                 vehicle_id: '',
             }
             : data;
+
 
         post(route('admin.schedules.store'), {
             data: payload,
@@ -255,24 +242,24 @@ export default function Schedules({
                             </div>
 
                             {/* Time slot – ONLY if not theoretical */}
-                            {!isTheoretical && (
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">Time Slot</label>
-                                    <select
-                                        value={data.time}
-                                        onChange={(e) => setData('time', e.target.value)}
-                                        className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
-                                    >
-                                        <option value="">Select time slot</option>
-                                        {slots.map((slot) => (
-                                            <option key={slot.value} value={slot.value}>
-                                                {slot.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
-                                </div>
-                            )}
+
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Time Slot</label>
+                                <select
+                                    value={data.time}
+                                    onChange={(e) => setData('time', e.target.value)}
+                                    className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
+                                >
+                                    <option value="">Select time slot</option>
+                                    {slots.map((slot) => (
+                                        <option key={slot.value} value={slot.value}>
+                                            {slot.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
+                            </div>
+
 
                             {/* Vehicle – ONLY if not theoretical */}
                             {!isTheoretical && (

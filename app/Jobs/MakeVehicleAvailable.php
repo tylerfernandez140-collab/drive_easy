@@ -21,22 +21,17 @@ class MakeVehicleAvailable implements ShouldQueue
     }
 
     public function handle(): void
-    {
-        $vehicle = Vehicle::find($this->vehicleId);
+{
+    $vehicle = Vehicle::find($this->vehicleId);
 
-        if (! $vehicle) {
-            return;
-        }
-
-        // optional: only free it if the until time has passed
-        if ($vehicle->unavailable_until && now()->lessThan($vehicle->unavailable_until)) {
-            // still not time, just exit
-            return;
-        }
-
-        $vehicle->update([
-            'status' => 'available',
-            'unavailable_until' => null,
-        ]);
+    if (! $vehicle) {
+        return;
     }
+
+    $vehicle->update([
+        'status' => 'available',
+        'unavailable_until' => null,
+    ]);
+}
+
 }

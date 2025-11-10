@@ -20,17 +20,14 @@ class AdminScheduleController extends Controller
     
 public function index()
 {
-    // instructors
     $instructors = User::where('role', 'instructor')
         ->select('id', 'name')
         ->get();
 
-    // registrations (you were already using a resource, keep it)
     $registrations = CourseRegistration::with([
         'studentApplication.user:id,name',
     ])->get();
 
-    // schedules with relations
     $schedules = Schedule::with([
             'instructor:id,name',
             'courseRegistration.studentApplication.user:id,name',
@@ -39,18 +36,14 @@ public function index()
         ->latest()
         ->get();
 
-    // normalize so frontend can still use s.course_registration
     $schedules->transform(function ($schedule) {
-        // add alias for Vue/React that expects course_registration
         $schedule->course_registration = $schedule->courseRegistration;
         return $schedule;
     });
 
-    // vehicles
  $vehicles = Vehicle::active()
         ->orderBy('name')
         ->get(['id', 'name', 'type', 'status', 'unavailable_until']);
-    // fixed slots to send to frontend (same as FE constant)
     $slots = [
         ['label' => '08:00 – 10:00 AM', 'value' => '08:00'],
         ['label' => '10:00 – 12:00 NN', 'value' => '10:00'],
@@ -101,21 +94,22 @@ public function store(StoreScheduleRequest $request)
         }
     }
 
-    // 2. only parse time for practical
-    if (! $isTheoretical) {
-        // FE sends "08:00" → make it "08:00:00"
-        $dateTime = \Carbon\Carbon::parse($validated['date'] . ' ' . ($validated['time'] ?? '00:00'), 'Asia/Manila');
-        $validated['time'] = $dateTime->format('H:i:s');
-    } else {
-        // theory: force a safe value
-        $validated['time'] = null; // or '00:00:00'
-    }
+ if (! empty($validated['time'])) {
+    $dateTime = \Carbon\Carbon::parse(
+        $validated['date'].' '.$validated['time'],
+        'Asia/Manila'
+    );
 
-    $time = $validated['time']; // might be null for theory
+    $validated['time'] = $dateTime->format('H:i:s');
+} else {
+    $validated['time'] = null;
+}
 
-    // 3. conflicts
+$time = $validated['time'];
+
+
+
     if (! $isTheoretical) {
-        // instructor conflict (practical only)
         $instructorConflict = \App\Models\Schedule::where('date', $date)
             ->where('time', $time)
             ->where('instructor_id', $instructorId)
@@ -128,7 +122,6 @@ public function store(StoreScheduleRequest $request)
         }
     }
 
-    // student conflict still ok for both
     if ($registrationId) {
         $studentConflict = \App\Models\Schedule::where('date', $date)
             ->when(! $isTheoretical, fn ($q) => $q->where('time', $time)) // for practical
@@ -142,7 +135,6 @@ public function store(StoreScheduleRequest $request)
         }
     }
 
-    // max 4/day → practical only
     if (! $isTheoretical) {
         $instructorDayCount = \App\Models\Schedule::where('date', $date)
             ->where('instructor_id', $instructorId)
@@ -155,10 +147,8 @@ public function store(StoreScheduleRequest $request)
         }
     }
 
-    // 4. create
     $schedule = \App\Models\Schedule::create($validated);
 
-    // 5. lock vehicle → practical only
     if (! $isTheoretical && $vehicleId) {
         $vehicle = \App\Models\Vehicle::find($vehicleId);
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Models\Hero;
 use Inertia\Inertia;
+use App\Http\Controllers\Auth\EmailVerificationCodeController;
 
 Route::get('/', function () {
      $hero = Hero::first();
@@ -20,6 +21,24 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// routes/web.php
+// routes/web.php
+
+
+Route::middleware(['auth', 'verified.email'])->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+});
+Route::get('/email/verify-code', [EmailVerificationCodeController::class, 'showVerifyForm'])
+    ->name('verification.code.notice');
+
+Route::post('/email/verify-code', [EmailVerificationCodeController::class, 'verify'])
+    ->name('verification.code.verify');
+
+Route::post('/email/resend-code', [EmailVerificationCodeController::class, 'resend'])
+    ->name('verification.code.resend');
 
 Route::get('/dashboard', function () {
     if (Auth::check()) {

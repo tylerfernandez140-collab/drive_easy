@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Middleware\EnforcePasswordChange;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureEmailIsVerified;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'student' => \App\Http\Middleware\StudentMiddleware::class,
             'instructor' => \App\Http\Middleware\InstructorMiddleware::class,
             'check.exam.schedule' => \App\Http\Middleware\CheckExamSchedule::class,
+             'verified.email'       => EnsureEmailIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

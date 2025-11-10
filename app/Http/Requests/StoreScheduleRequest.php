@@ -50,7 +50,6 @@ class StoreScheduleRequest extends FormRequest
                 str_contains($courseType, 'theory') ||
                 $courseType === 'th';
 
-            // ✅ PRACTICAL: must have time + vehicle
             if (! $isTheoretical) {
                 if (! $this->input('time')) {
                     $v->errors()->add('time', 'Time is required for practical training.');
@@ -60,9 +59,6 @@ class StoreScheduleRequest extends FormRequest
                     $v->errors()->add('vehicle_id', 'Vehicle is required for practical training.');
                 }
             }
-
-            // ✅ THEORETICAL: must NOT force time/vehicle
-            // (nothing to add here)
         });
     }
 }
