@@ -49,7 +49,7 @@ php artisan storage:link
 php artisan  key:generate
 php artisan migrate --seed
 php artisan storage:link
-
+npm install -D tailwindcss-animate
 ### 5. Install JS Dependencies 
 ```bash
 npm install 
