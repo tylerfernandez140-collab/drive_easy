@@ -20,6 +20,7 @@ class Schedule extends Model
         'status',
         'description',
         'exam_status',
+        'vehicle_id',
     ];
 
     /**
@@ -32,7 +33,7 @@ class Schedule extends Model
         return $this->belongsTo(CourseRegistration::class);
     }
     
-
+   public function vehicle() { return $this->belongsTo(Vehicle::class); }
     // Belongs to a user who is an instructor
     public function instructor()
     {

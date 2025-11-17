@@ -23,5 +23,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ExamQuestionsSeeder::class
         ]);
+        $this->call(VehicleSeeder::class);
+
     }
 }
