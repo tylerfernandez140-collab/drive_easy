@@ -26,6 +26,23 @@ class EvaluateStudentsController extends Controller
           
         ]);
     }
+    public function evaluatedIndex()
+{
+    $instructorId = Auth::id();
+
+    $evaluations = StudentEvaluation::with([
+        'student', // assuming relation: StudentEvaluation belongsTo User as "student"
+        'courseRegistration.studentApplication.user',
+    ])
+        // ->where('instructor_id', $instructorId) // uncomment if you have this column
+        ->latest()
+        ->get();
+
+    return Inertia::render('Instructor/EvaluatedStudents', [
+        'evaluations' => $evaluations,
+        'success'     => session('success'),
+    ]);
+}
 
     /**
      * Show the form for creating a new resource.

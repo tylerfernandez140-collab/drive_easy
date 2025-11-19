@@ -24,16 +24,21 @@ export default function InstructorLayout({ header, children }) {
                                 </Link>
                             </div>
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink href={route('instructor.assignedStudents.index')} active={route().current('instructor.assignedStudents.index')}>
+                                <NavLink
+                                    href={route('instructor.assignedStudents.index')}
+                                    active={route().current('instructor.assignedStudents.index')}
+                                >
                                     Assigned Students
                                 </NavLink>
-                                {/* <NavLink href={'/'} active={route().current('instructor.assignedStudents.index')}>
-                                    Assessment Results
-                                </NavLink> */}
-                                {/* <NavLink href={route('instructor.evaluateStudents.index')} active={route().current('instructor.evaluateStudents.index')}>
-                                    Evaluate Students
-                                </NavLink> */}
+
+                                <NavLink
+                                    href={route('instructor.evaluatedStudents.index')}
+                                    active={route().current('instructor.evaluatedStudents.index')}
+                                >
+                                    Evaluated Students
+                                </NavLink>
                             </div>
+
                         </div>
 
                         <div className="hidden sm:ms-6 sm:flex sm:items-center">

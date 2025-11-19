@@ -17,8 +17,7 @@ class AdminScheduleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    
-public function index()
+   public function index()
 {
     $instructors = User::where('role', 'instructor')
         ->select('id', 'name')
@@ -37,13 +36,28 @@ public function index()
         ->get();
 
     $schedules->transform(function ($schedule) {
+        $user = optional(
+            optional(
+                optional($schedule->courseRegistration)->studentApplication
+            )->user
+        );
+
+        $schedule->students = $user
+            ? [[
+                'id'   => $user->id,
+                'name' => $user->name,
+            ]]
+            : [];
+
         $schedule->course_registration = $schedule->courseRegistration;
+
         return $schedule;
     });
 
- $vehicles = Vehicle::active()
+    $vehicles = Vehicle::active()
         ->orderBy('name')
         ->get(['id', 'name', 'type', 'status', 'unavailable_until']);
+
     $slots = [
         ['label' => '08:00 – 10:00 AM', 'value' => '08:00'],
         ['label' => '10:00 – 12:00 NN', 'value' => '10:00'],
@@ -59,6 +73,7 @@ public function index()
         'slots'         => $slots,
     ]);
 }
+
 
 
     /**

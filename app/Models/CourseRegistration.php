@@ -34,6 +34,12 @@ class CourseRegistration extends Model
 {
     return $this->hasMany(StudentEvaluation::class, 'course_registration_id');
 }
+// in App\Models\CourseRegistration.php
+
+public function schedules()
+{
+    return $this->hasMany(Schedule::class, 'course_registration_id');
+}
 
     
 }

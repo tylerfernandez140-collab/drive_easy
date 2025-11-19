@@ -40,19 +40,25 @@ class Schedule extends Model
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
+// app/Models/Schedule.php
+
+// public function courseRegistrations()
+// {
+//     return $this->hasMany(CourseRegistration::class, 'schedule_id');
+// }
 
 
-public function students()
-{
-    return $this->hasManyThrough(
-        User::class,
-        CourseRegistration::class,
-        'schedule_id',       
-        'id',               
-        'id',             
-        'user_id'  
-    );
-}
+// public function students()
+// {
+//     return $this->hasManyThrough(
+//         User::class,
+//         CourseRegistration::class,
+//         'schedule_id',       
+//         'id',               
+//         'id',             
+//         'user_id'  
+//     );
+// }
 
 
 }
