@@ -31,7 +31,6 @@ export default function AdminLayout({ header, children }) {
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         Applicants
-                                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                                     </span>
                                 </NavLink>
 
