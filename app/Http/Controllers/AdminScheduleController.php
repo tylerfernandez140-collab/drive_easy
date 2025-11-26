@@ -109,21 +109,21 @@ public function store(StoreScheduleRequest $request)
         }
     }
 
- if (! empty($validated['time'])) {
-    $dateTime = \Carbon\Carbon::parse(
-        $validated['date'].' '.$validated['time'],
-        'Asia/Manila'
-    );
+    // 2. normalize time to H:i:s (Asia/Manila)
+    if (! empty($validated['time'])) {
+        $dateTime = \Carbon\Carbon::parse(
+            $validated['date'].' '.$validated['time'],
+            'Asia/Manila'
+        );
 
-    $validated['time'] = $dateTime->format('H:i:s');
-} else {
-    $validated['time'] = null;
-}
+        $validated['time'] = $dateTime->format('H:i:s');
+    } else {
+        $validated['time'] = null;
+    }
 
-$time = $validated['time'];
+    $time = $validated['time'];
 
-
-
+    // 3. Instructor conflict (already ok, practical only)
     if (! $isTheoretical) {
         $instructorConflict = \App\Models\Schedule::where('date', $date)
             ->where('time', $time)
@@ -137,6 +137,23 @@ $time = $validated['time'];
         }
     }
 
+    // 4. Vehicle conflict (same vehicle/date/time, regardless of student/instructor)
+    if (! $isTheoretical && $vehicleId) {
+        $vehicleConflict = \App\Models\Schedule::where('date', $date)
+            ->where('time', $time)
+            ->where('vehicle_id', $vehicleId)
+            ->exists();
+
+        if ($vehicleConflict) {
+            return back()
+                ->withErrors([
+                    'vehicle_id' => 'This vehicle is already scheduled in this time slot.',
+                ])
+                ->withInput();
+        }
+    }
+
+    // 5. Student conflict
     if ($registrationId) {
         $studentConflict = \App\Models\Schedule::where('date', $date)
             ->when(! $isTheoretical, fn ($q) => $q->where('time', $time)) // for practical
@@ -145,11 +162,14 @@ $time = $validated['time'];
 
         if ($studentConflict) {
             return back()
-                ->withErrors(['course_registration_id' => 'This student already has a schedule for this time slot.'])
+                ->withErrors([
+                    'course_registration_id' => 'This student already has a schedule for this time slot.',
+                ])
                 ->withInput();
         }
     }
 
+    // 6. Instructor day limit (0/4 only for practical)
     if (! $isTheoretical) {
         $instructorDayCount = \App\Models\Schedule::where('date', $date)
             ->where('instructor_id', $instructorId)
@@ -157,13 +177,17 @@ $time = $validated['time'];
 
         if ($instructorDayCount >= 4) {
             return back()
-                ->withErrors(['instructor_id' => 'This instructor has reached the maximum of 4 students for this day.'])
+                ->withErrors([
+                    'instructor_id' => 'This instructor has reached the maximum of 4 students for this day.',
+                ])
                 ->withInput();
         }
     }
 
+    // 7. Create schedule
     $schedule = \App\Models\Schedule::create($validated);
 
+    // 8. Vehicle availability lock (keep existing logic)
     if (! $isTheoretical && $vehicleId) {
         $vehicle = \App\Models\Vehicle::find($vehicleId);
 
