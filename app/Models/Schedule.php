@@ -40,6 +40,11 @@ class Schedule extends Model
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
+    public function studentEvaluations()
+    {
+        return $this->hasMany(StudentEvaluation::class);
+    }
+
 // app/Models/Schedule.php
 
 // public function courseRegistrations()

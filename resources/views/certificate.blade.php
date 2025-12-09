@@ -24,7 +24,7 @@
         }
 
         .logo {
-            max-width: 200px;
+            max-width: 100px;
             margin-bottom: 20px;
         }
 
@@ -91,23 +91,23 @@
 
 <body>
     <div class="certificate-container">
-        {{-- <img src="https://via.placeholder.com/200x100?text=DriveEasy+Logo" alt="DriveEasy Logo" class="logo"> --}}
+        <img src="{{ $logo }}" alt="DriveEasy Logo" class="logo">
 
         <p class="certificate-of">Certificate of</p>
         <h1>Completion</h1>
         <p>This certifies that</p>
-        <div class="student-name">{{ $student->name }}</div>
+        <div class="student-name">{{ $student->first_name }} {{ $student->last_name }}</div>
 
         <div class="course-info">
             has successfully completed the<br>
-            <strong>{{ ucfirst($courseType) }} Course</strong><br>
+            <strong>{{ ucfirst($courseType) }} Course @if($courseDuration !== 'N/A') ({{ $courseDuration }}) @endif</strong><br>
             offered by DriveEasy Driving School
         </div>
 
         <div class="date">Issued on: {{ now()->format('F d, Y') }}</div>
 
         <div class="signature-line">
-            <div class="signature">DriveEasy Representative</div>
+            <div class="signature">{{ $instructorName }}</div>
             <div class="signature">Instructor</div>
         </div>
 

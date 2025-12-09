@@ -1,6 +1,7 @@
 import InstructorLayout from '@/Layouts/InstructorLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
+// import StudentDetailsCard from '@/Components/cards/StudentDetailsCard'; // Removed import
 import {
     FiCheckCircle,
     FiXCircle,
@@ -20,7 +21,7 @@ export default function EvaluatedStudents({ evaluations = [], success }) {
         return evaluations.filter((evaluation) => {
             const student = evaluation.student || evaluation.course_registration?.student_application?.user;
 
-            const name = (student?.name || '').toLowerCase();
+            const name = (student?.first_name && student?.last_name) ? `${student.first_name} ${student.last_name}`.toLowerCase() : '';
             const email = (student?.email || '').toLowerCase();
             const courseType = (evaluation.course_type || '').toLowerCase();
             const remark = (evaluation.remark || '').toLowerCase();
@@ -29,7 +30,8 @@ export default function EvaluatedStudents({ evaluations = [], success }) {
 
             const matchesSearch =
                 !search ||
-                name.includes(search) ||
+                (student?.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+                student?.last_name?.toLowerCase().includes(search.toLowerCase())) ||
                 email.includes(search);
 
             const matchesCourseType =
@@ -209,7 +211,7 @@ export default function EvaluatedStudents({ evaluations = [], success }) {
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {student?.name || 'Unknown Student'}
+                                                        {student?.first_name && student?.last_name ? `${student.first_name} ${student.last_name}` : 'Unknown Student'}
                                                     </div>
                                                     <div className="text-xs text-gray-500">
                                                         {student?.email || 'No email'}
@@ -260,6 +262,8 @@ export default function EvaluatedStudents({ evaluations = [], success }) {
                                                 <span>{formatDate(evaluation.created_at)}</span>
                                                 <span>{formatTime(evaluation.created_at)}</span>
                                             </div>
+
+                                            {/* Removed StudentDetailsCard component */}
                                         </div>
                                     );
                                 })}

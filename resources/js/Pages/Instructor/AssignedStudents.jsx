@@ -211,7 +211,7 @@ export default function AssignedStudents({ students }) {
                                                             className="p-2 text-xs bg-indigo-50 rounded-lg hover:bg-indigo-100 cursor-pointer transition-colors border border-indigo-100"
                                                         >
                                                             <div className="font-medium truncate text-indigo-900">
-                                                                {studentData?.name || 'Student'}
+                                                                {studentData?.first_name + ' ' + studentData?.last_name || 'Student'}
                                                             </div>
                                                             <div className="text-indigo-600 truncate flex items-center">
                                                                 <FiClock className="mr-1" />
@@ -260,7 +260,7 @@ export default function AssignedStudents({ students }) {
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <h3 className="text-base font-semibold text-gray-900 truncate">
-                                                                    {student?.name || 'Unknown Student'}
+                                                                    {student?.first_name + ' ' + student?.last_name || 'Unknown Student'}
                                                                 </h3>
                                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
                                                                     ${courseType === 'Practical' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>

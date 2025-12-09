@@ -13,14 +13,6 @@ export default function StudentDetailsCard({ student, courseRegistration, course
 
     const evaluation = courseRegistration?.evaluations?.[0] ?? null;
 
-    console.log("StudentDetailsCard data:", {
-        student,
-        courseRegistration,
-        courseType,
-        evaluation
-    });
-
-
     let status;
     if (!evaluation?.remark) {
         status = "pending";

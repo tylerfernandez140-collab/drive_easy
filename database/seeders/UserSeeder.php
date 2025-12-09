@@ -12,7 +12,9 @@ class UserSeeder extends Seeder
     {
         // Admin User
         User::create([
-            'name' => 'Admin User',
+            'first_name' => 'Admin',
+            'middle_name' => null,
+            'last_name' => 'User',
             'email' => 'admin@example.com',
             'phone' => '09123456789',
             'role' => 'admin',
@@ -22,7 +24,9 @@ class UserSeeder extends Seeder
 
        // Instructor Users
         User::create([
-            'name' => 'Michael Santos',
+            'first_name' => 'Michael',
+            'middle_name' => null,
+            'last_name' => 'Santos',
             'email' => 'michael.santos@example.com',
             'phone' => '09123456781',
             'role' => 'instructor',
@@ -31,7 +35,9 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Carlo Mendoza',
+            'first_name' => 'Carlo',
+            'middle_name' => null,
+            'last_name' => 'Mendoza',
             'email' => 'carlo.mendoza@example.com',
             'phone' => '09123456782',
             'role' => 'instructor',
@@ -40,7 +46,9 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Jerome Castillo',
+            'first_name' => 'Jerome',
+            'middle_name' => null,
+            'last_name' => 'Castillo',
             'email' => 'jerome.castillo@example.com',
             'phone' => '09123456783',
             'role' => 'instructor',
@@ -49,7 +57,9 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Ryan Dela Cruz',
+            'first_name' => 'Ryan',
+            'middle_name' => null,
+            'last_name' => 'Dela Cruz',
             'email' => 'ryan.delacruz@example.com',
             'phone' => '09123456784',
             'role' => 'instructor',
@@ -58,7 +68,9 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Allan Fernandez',
+            'first_name' => 'Allan',
+            'middle_name' => null,
+            'last_name' => 'Fernandez',
             'email' => 'allan.fernandez@example.com',
             'phone' => '09123456785',
             'role' => 'instructor',
@@ -69,7 +81,9 @@ class UserSeeder extends Seeder
 
         // Student User
         User::create([
-            'name' => 'Student User',
+            'first_name' => 'Student',
+            'middle_name' => null,
+            'last_name' => 'User',
             'email' => 'student@example.com',
             'phone' => '09123456781',
             'role' => 'student',

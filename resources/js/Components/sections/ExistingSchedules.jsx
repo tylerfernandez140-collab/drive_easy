@@ -349,13 +349,11 @@ export default function ExistingSchedules({
                                                                     {student.name}
                                                                 </span>
                                                             </div>
+
                                                             <StudentDetailsCard
                                                                 student={student}
                                                                 courseRegistration={sched.course_registration}
-                                                                courseType={
-                                                                    sched.course_registration
-                                                                        ?.evaluations?.[0]?.course_type
-                                                                }
+                                                                courseType={sched.course_registration?.course_type}
                                                             />
                                                         </li>
                                                     ))}

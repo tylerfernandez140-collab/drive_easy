@@ -20,17 +20,19 @@ class AdminScheduleController extends Controller
    public function index()
 {
     $instructors = User::where('role', 'instructor')
-        ->select('id', 'name')
+        ->select('id', 'first_name', 'last_name')
         ->get();
 
     $registrations = CourseRegistration::with([
-        'studentApplication.user:id,name',
+        'studentApplication.user:id,first_name,last_name',
     ])->get();
 
     $schedules = Schedule::with([
-            'instructor:id,name',
-            'courseRegistration.studentApplication.user:id,name',
+            'instructor:id,first_name,last_name',
+            'courseRegistration.studentApplication.user:id,first_name,last_name',
+            'courseRegistration.evaluations',
             'vehicle:id,name,type,status',
+            'studentEvaluations'
         ])
         ->latest()
         ->get();
@@ -42,10 +44,17 @@ class AdminScheduleController extends Controller
             )->user
         );
 
+        $evaluation = $schedule->studentEvaluations->firstWhere(
+            'course_registration_id', $schedule->courseRegistration->id
+        );
+
         $schedule->students = $user
             ? [[
-                'id'   => $user->id,
-                'name' => $user->name,
+                'id'        => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'name'      => $user->first_name . ' ' . $user->last_name,
+                'evaluation' => $evaluation, // Include evaluation data
             ]]
             : [];
 
@@ -94,7 +103,7 @@ public function store(StoreScheduleRequest $request)
     $date = $validated['date'];
     $instructorId = $validated['instructor_id'];
     $vehicleId = $validated['vehicle_id'] ?? null;
-    $registrationId = $validated['course_registration_id'] ?? null;
+    $registrationId = $validated['course_registration_id'];
 
     // 1. detect theoretical
     $isTheoretical = false;

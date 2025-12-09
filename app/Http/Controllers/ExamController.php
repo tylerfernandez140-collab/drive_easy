@@ -96,20 +96,38 @@ public function store(Request $request)
         'attempt_number' => $attemptNumber,
     ]);
 
+    // Attempt to find a schedule for the course registration
+    $schedule = $courseRegistration->schedules()->first();
+
+    $evaluationData = [
+        'instructor_notes' => $status === 'PASSED'
+            ? 'Student passed theoretical exam.'
+            : 'Student failed. Retake required.',
+        'course_type' => $courseRegistration->course_type,
+        'scores' => $scores,
+        'total_score' => $earnedPoints,
+        'remark' => $status,
+    ];
+
+    if ($schedule) {
+        $evaluationData['schedule_id'] = $schedule->id;
+        $schedule->update(['exam_status' => 'completed']);
+    } else {
+        $schedule = Schedule::where('instructor_id', $student->id)
+            ->latest()
+            ->first();
+        if ($schedule) {
+            $schedule->update(['exam_status' => 'completed']);
+            $evaluationData['schedule_id'] = $schedule->id;
+        }
+    }
+
     StudentEvaluation::updateOrCreate(
         [
             'student_id' => $student->id,
             'course_registration_id' => $courseRegistration->id,
         ],
-        [
-            'instructor_notes' => $status === 'PASSED'
-                ? 'Student passed theoretical exam.'
-                : 'Student failed. Retake required.',
-            'course_type' => $courseRegistration->course_type,
-            'scores' => $scores,
-            'total_score' => $earnedPoints,
-            'remark' => $status,
-        ]
+        $evaluationData
     );
  $courseRegistration->update([
         'course_status' => 'completed',
@@ -140,7 +158,7 @@ public function show()
     $studentId = Auth::id();
     $student   = Auth::user();
 
-    $courseRegistration = $student->courseRegistrations()
+    $courseRegistration = $student->studentApplication->courseRegistrations()
         ->where('course_type', 'Theoretical')
         ->latest()
         ->first();
@@ -206,18 +224,20 @@ public function show()
 
 public function update(Request $request, $scheduleId)
 {
-   $exam = Schedule::findOrFail($scheduleId);
-$courseRegistration = $exam->courseRegistration;
+    $exam = Schedule::findOrFail($scheduleId);
+    $courseRegistration = $exam->courseRegistration;
 
-if ($courseRegistration && $courseRegistration->course_type === 'Theoretical') {
-    $exam->update(['exam_status' => 'force_started']);
-} else {
     $validated = $request->validate([
         'exam_status' => 'required|in:not_started,in_progress,completed,force_started',
     ]);
-    $exam->update($validated);
-}
 
+    // Apply the update based on the validated status
+    $exam->update(['exam_status' => $validated['exam_status']]);
+
+    // If the exam status is completed, also update the course registration status
+    if ($validated['exam_status'] === 'completed') {
+        $courseRegistration->update(['course_status' => 'completed']);
+    }
 
     return back()->with('success', 'Exam status updated to ' . $exam->exam_status);
 }

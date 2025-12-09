@@ -21,7 +21,8 @@ class CourseRegistrationResource extends JsonResource
             'course_status' => $this->course_status,
             'user' => [
                 'id' => $this->studentApplication->user->id,
-                'name' => $this->studentApplication->user->name,
+                'first_name' => $this->studentApplication->user->first_name,
+                'last_name' => $this->studentApplication->user->last_name,
             ],
         ];
     }

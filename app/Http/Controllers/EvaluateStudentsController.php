@@ -31,8 +31,9 @@ class EvaluateStudentsController extends Controller
     $instructorId = Auth::id();
 
     $evaluations = StudentEvaluation::with([
-        'student', // assuming relation: StudentEvaluation belongsTo User as "student"
+        'student',
         'courseRegistration.studentApplication.user',
+        'courseRegistration.schedules',
     ])
         // ->where('instructor_id', $instructorId) // uncomment if you have this column
         ->latest()
@@ -80,6 +81,16 @@ public function store(Request $request)
         return back()->withErrors(['course_type' => 'No course registration found for this student with the given type.']);
     }
 
+    // Attempt to find a schedule for the course registration
+    $schedule = $courseRegistration->schedules()->first();
+
+    if (! $schedule) {
+        return back()->withErrors(['schedule' => 'No schedule found for this course registration. Please assign a schedule before evaluating.']);
+    }
+
+    \Illuminate\Support\Facades\Log::info('Processing CourseRegistration ID: ' . $courseRegistration->id);
+    \Illuminate\Support\Facades\Log::info('Found schedule ID: ' . ($schedule ? $schedule->id : 'null'));
+
     $status = $validated['total_score'] >= 75 ? 'PASSED' : 'FAILED';
 
     $validated['instructor_notes'] = $status === 'PASSED'
@@ -89,7 +100,16 @@ public function store(Request $request)
     $validated['course_registration_id'] = $courseRegistration->id;
     $validated['remark'] = $status;
 
+    // If a schedule is found, use its ID; otherwise, set schedule_id to null
+    $validated['schedule_id'] = $schedule ? $schedule->id : null;
+    $validated['evaluated_by'] = Auth::id(); // Store current instructor's ID
+
     $evaluation = StudentEvaluation::create($validated);
+
+    // Update the schedule's exam_status to 'completed'
+    if ($schedule) {
+        $schedule->update(['exam_status' => 'completed']);
+    }
 
     $courseRegistration->update(['course_status' => 'completed']);
     return back()->with('success', 'Evaluation saved and course status updated!');
@@ -122,7 +142,8 @@ public function downloadCertificate(Request $request)
     $courseType = $request->query('courseType');
     $studentId = Auth::id();
 
-    $evaluation = StudentEvaluation::where('student_id', $studentId)
+    $evaluation = StudentEvaluation::with(['evaluatedBy', 'schedule.instructor', 'courseRegistration'])
+        ->where('student_id', $studentId)
         ->where('course_type', $courseType)
         ->first();
 
@@ -130,11 +151,29 @@ public function downloadCertificate(Request $request)
         abort(404, 'Certificate not available.');
     }
 
+    $courseDuration = 'N/A';
+    if ($courseType === 'theoretical') {
+        $courseDuration = '15 hours';
+    } elseif ($courseType === 'practical') {
+        $courseDuration = '8 hours';
+    }
+
+    $instructorName = 'DriveEasy Representative';
+    // Prioritize direct evaluatedBy relation (works even with null schedule_id)
+    if ($evaluation->evaluatedBy) {
+        $instructorName = $evaluation->evaluatedBy->first_name . ' ' . $evaluation->evaluatedBy->last_name;
+    } elseif ($evaluation->schedule && $evaluation->schedule->instructor) {
+        $instructorName = $evaluation->schedule->instructor->first_name . ' ' . $evaluation->schedule->instructor->last_name;
+    }
+
     $pdf = app('dompdf.wrapper');
     $pdf->loadView('certificate', [
         'student' => Auth::user(),
         'courseType' => $courseType,
-        'evaluation' => $evaluation
+        'evaluation' => $evaluation,
+        'courseDuration' => $courseDuration,
+        'logo' => public_path('images/cert-logo.png'),
+        'instructorName' => $instructorName,
     ]);
 
    return $pdf->stream("Certificate-{$courseType}.pdf");

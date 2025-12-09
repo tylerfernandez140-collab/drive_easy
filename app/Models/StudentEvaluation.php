@@ -19,6 +19,7 @@ class StudentEvaluation extends Model
     'total_score',
     'remark',
     'instructor_notes',
+    'evaluated_by',
 ];
 
 
@@ -38,9 +39,17 @@ public function schedule()
     return $this->belongsTo(Schedule::class);
 }
 public function courseRegistration()
-{
-    return $this->belongsTo(CourseRegistration::class);
-}
+    {
+        return $this->belongsTo(CourseRegistration::class);
+    }
+
+    /**
+     * The instructor who created the evaluation (User with role: instructor)
+     */
+    public function evaluatedBy()
+    {
+        return $this->belongsTo(User::class, 'evaluated_by');
+    }
 
     /**
      * The instructor who evaluated the student (User with role: instructor)
@@ -60,4 +69,18 @@ public function examAttempts()
     return $this->hasMany(ExamAttempt::class, 'student_id', 'student_id');
 }
 
+    /**
+     * Get the student application associated with the evaluation via course registration
+     */
+    public function studentApplication()
+    {
+        return $this->hasOneThrough(
+            StudentApplication::class,
+            CourseRegistration::class,
+            'id', // Foreign key on CourseRegistration table
+            'id', // Foreign key on StudentApplication table
+            'course_registration_id', // Local key on StudentEvaluation table
+            'student_application_id' // Foreign key on CourseRegistration table
+        );
+    }
 }

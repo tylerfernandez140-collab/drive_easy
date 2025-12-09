@@ -78,20 +78,20 @@ export default function Schedules({
         }
     }, [data.date, data.time, schedules, vehicles, data.vehicle_id, setData, isTheoretical]);
 
+    const isVehicleFreeNow = (vehicle) => {
+        if (vehicle.status && vehicle.status !== 'available') return false;
+
+        if (!vehicle.unavailable_until) return true;
+
+        const now = new Date();
+        const until = new Date(vehicle.unavailable_until);
+        return until <= now;
+    };
+
     const vehiclesForSelectedCourse = useMemo(() => {
         if (isTheoretical) return [];
 
         const all = availableVehicles || [];
-
-        const isVehicleFreeNow = (vehicle) => {
-            if (vehicle.status && vehicle.status !== 'available') return false;
-
-            if (!vehicle.unavailable_until) return true;
-
-            const now = new Date();
-            const until = new Date(vehicle.unavailable_until);
-            return until <= now;
-        };
 
         const filterByCourse = (list) => {
             if (!selectedReg) return list;
@@ -183,10 +183,12 @@ export default function Schedules({
                                     onChange={(e) => setData('instructor_id', e.target.value)}
                                     className="mt-1 cursor-pointer block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border text-sm"
                                 >
-                                    <option value="">Select Instructor</option>
+                                    <option value="">
+                                        Select Instructor
+                                    </option>
                                     {instructors.map((instructor) => (
                                         <option key={instructor.id} value={instructor.id}>
-                                            {instructor.name}
+                                            {instructor.first_name + ' ' + instructor.last_name}
                                         </option>
                                     ))}
                                 </select>
@@ -216,9 +218,11 @@ export default function Schedules({
                                         .filter((reg) => !scheduledIds.has(reg.id))
                                         .map((reg) => (
                                             <option key={reg.id} value={reg.id}>
-                                                {reg.user?.name ??
-                                                    reg.student_application?.user?.name ??
-                                                    'No Student'}{' '}
+                                                {(reg.user?.first_name && reg.user?.last_name)
+                                                    ? reg.user.first_name + ' ' + reg.user.last_name
+                                                    : (reg.student_application?.user?.first_name && reg.student_application?.user?.last_name)
+                                                        ? reg.student_application.user.first_name + ' ' + reg.student_application.user.last_name
+                                                        : 'No Student'}{' '}
                                                 - {reg.course_type}
                                             </option>
                                         ))}
@@ -274,10 +278,7 @@ export default function Schedules({
                                         <option value="">Select vehicle</option>
 
                                         {vehiclesForSelectedCourse.map((vehicle) => {
-                                            const isUnavailable =
-                                                vehicle.status !== 'available' ||
-                                                (vehicle.unavailable_until &&
-                                                    new Date(vehicle.unavailable_until) > new Date());
+                                            const isUnavailable = !isVehicleFreeNow(vehicle);
 
                                             // Format display time
                                             let label = `${vehicle.name} (${vehicle.type.replace(/_/g, ' ')})`;

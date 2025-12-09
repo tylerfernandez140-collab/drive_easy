@@ -61,7 +61,11 @@ export default function CompactApplicationCard({ app }) {
                             <FaUser className="text-sm" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-medium text-gray-800">{app.user?.name || 'N/A'}</h3>
+                            <h3 className="text-sm font-medium text-gray-800">
+                                {app.user?.first_name || 'N/A'}
+                                {app.user?.middle_name ? ` ${app.user.middle_name}` : ''}
+                                {app.user?.last_name ? ` ${app.user.last_name}` : ''}
+                            </h3>
                             <p className="text-xs text-gray-500">
                                 {formatDate(app.created_at)}
                             </p>

@@ -4,6 +4,9 @@ use App\Http\Controllers\HeroController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Schedule;
 use App\Models\StudentApplication;
+use App\Models\StudentEvaluation;
+use App\Models\Feedback;
+use Carbon\Carbon;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -78,7 +81,36 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 
 Route::get('/instructor/dashboard', function () {
-    return Inertia::render('Instructor/Dashboard');
+    $instructor = Auth::user();
+    $currentDate = Carbon::now();
+
+    $ongoingTrainings = Schedule::with(['courseRegistration.studentApplication.user'])
+        ->where('instructor_id', $instructor->id)
+        ->where('date', '<=', $currentDate->toDateString())
+        ->where('exam_status', 'in_progress')
+        ->get();
+
+    $upcomingSessions = Schedule::with(['courseRegistration.studentApplication.user'])
+        ->where('instructor_id', $instructor->id)
+        ->where('date', '>', $currentDate->toDateString())
+        ->where('exam_status', 'not_started')
+        ->get();
+
+    $evaluatedStudents = StudentEvaluation::with(['studentApplication.user', 'courseRegistration'])
+        ->whereHas('schedule', function ($query) use ($instructor) {
+            $query->where('instructor_id', $instructor->id);
+        })
+        ->get();
+
+    $feedbackReports = Feedback::with(['studentApplication.user'])
+        ->where('instructor_id', $instructor->id)
+        ->get();
+
+    return Inertia::render('Instructor/Dashboard', [
+        'ongoingTrainings' => $ongoingTrainings,
+        'upcomingSessions' => $upcomingSessions,
+        'evaluatedStudents' => $evaluatedStudents,        'feedbackReports' => $feedbackReports,
+    ]);
 })->middleware(['auth', 'verified', 'instructor'])->name('instructor.dashboard');
        
 Route::middleware('auth')->group(function () {

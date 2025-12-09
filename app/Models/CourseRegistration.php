@@ -14,6 +14,7 @@ class CourseRegistration extends Model
         'course_type',
         'course_status',
         'admin_remarks',
+        'certificate_issued_at',
     ];
 
     public function studentApplication()

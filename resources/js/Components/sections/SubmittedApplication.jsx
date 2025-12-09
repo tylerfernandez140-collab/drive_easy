@@ -39,7 +39,7 @@ export default function SubmittedApplication({ applications }) {
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-800">
-                                                    {app.user?.name || "N/A"}
+                                                    {`${app.user?.first_name || ""} ${app.user?.middle_name || ""} ${app.user?.last_name || ""}`.trim() || "N/A"}
                                                 </h3>
                                             </div>
                                         </div>

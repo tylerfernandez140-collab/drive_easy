@@ -14,7 +14,9 @@ export default function UpdateProfileInformation({
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
-            name: user.name,
+            first_name: user.first_name,
+            middle_name: user.middle_name,
+            last_name: user.last_name,
             email: user.email,
             phone: user.phone,
             address: user.address,
@@ -29,20 +31,69 @@ export default function UpdateProfileInformation({
     return (
         <section className={className}>
             <form onSubmit={submit} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                        <InputLabel htmlFor="first_name" value="First Name" />
 
-                    <TextInput
-                        id="name"
-                        className="mt-1 block w-full"
-                        value={data.name}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                        isFocused
-                        autoComplete="name"
-                    />
+                        <TextInput
+                            id="first_name"
+                            className="mt-1 block w-full"
+                            value={data.first_name}
+                            onChange={(e) => setData('first_name', e.target.value)}
+                            required
+                            isFocused
+                            autoComplete="given-name"
+                        />
 
-                    <InputError className="mt-2" message={errors.name} />
+                        <InputError className="mt-2" message={errors.first_name} />
+                    </div>
+
+                    <div className="flex-1">
+                        <InputLabel htmlFor="middle_name" value="Middle Name" />
+
+                        <TextInput
+                            id="middle_name"
+                            className="mt-1 block w-full"
+                            value={data.middle_name}
+                            onChange={(e) => setData('middle_name', e.target.value)}
+                            autoComplete="additional-name"
+                        />
+
+                        <InputError className="mt-2" message={errors.middle_name} />
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                        <InputLabel htmlFor="last_name" value="Last Name" />
+
+                        <TextInput
+                            id="last_name"
+                            className="mt-1 block w-full"
+                            value={data.last_name}
+                            onChange={(e) => setData('last_name', e.target.value)}
+                            required
+                            autoComplete="family-name"
+                        />
+
+                        <InputError className="mt-2" message={errors.last_name} />
+                    </div>
+
+                    <div className="flex-1">
+                        <InputLabel htmlFor="phone" value="Phone" />
+
+                        <TextInput
+                            id="phone"
+                            type="text"
+                            className="mt-1 block w-full"
+                            value={data.phone}
+                            onChange={(e) => setData('phone', e.target.value)}
+                            required
+                            autoComplete="phone"
+                        />
+
+                        <InputError className="mt-2" message={errors.phone} />
+                    </div>
                 </div>
 
                 <div>
@@ -61,21 +112,6 @@ export default function UpdateProfileInformation({
                     <InputError className="mt-2" message={errors.email} />
                 </div>
                 <div>
-                    <InputLabel htmlFor="phone" value="Phone" />
-
-                    <TextInput
-                        id="phone"
-                        type="text"
-                        className="mt-1 block w-full"
-                        value={data.phone}
-                        onChange={(e) => setData('phone', e.target.value)}
-                        required
-                        autoComplete="phone"
-                    />
-
-                    <InputError className="mt-2" message={errors.phone} />
-                </div>
-                <div>
                     <InputLabel htmlFor="address" value="Address" />
 
                     <TextInput
@@ -88,7 +124,7 @@ export default function UpdateProfileInformation({
                         autoComplete="address"
                     />
 
-                    <InputError className="mt-2" message={errors.email} />
+                    <InputError className="mt-2" message={errors.address} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
