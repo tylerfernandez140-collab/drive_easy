@@ -29,6 +29,7 @@ echo "DB_DATABASE: $DB_DATABASE" >> storage/logs/env_vars.log
 echo "DB_USERNAME: $DB_USERNAME" >> storage/logs/env_vars.log
 echo "DB_PASSWORD: $DB_PASSWORD" >> storage/logs/env_vars.log
 echo "Environment variables logged to storage/logs/env_vars.log"
+cat storage/logs/env_vars.log
 
 echo "--- Creating Storage Link ---
 php artisan storage:link
