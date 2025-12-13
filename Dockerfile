@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libzip-dev \
     libicu-dev \
-    libpq-dev # For PostgreSQL
+    libpq-dev \
+    nodejs \
+    npm # For PostgreSQL, Node.js, and npm
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
