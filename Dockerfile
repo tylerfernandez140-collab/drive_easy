@@ -36,7 +36,15 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy the rest of the application code
 COPY . .
 
-# Run build steps from build.sh
+RUN echo "--- Debugging Database Environment Variables ---" \
+    && echo "DB_CONNECTION: $DB_CONNECTION" \
+    && echo "DB_HOST: $DB_HOST" \
+    && echo "DB_PORT: $DB_PORT" \
+    && echo "DB_DATABASE: $DB_DATABASE" \
+    && echo "DB_USERNAME: $DB_USERNAME" \
+    && echo "DB_PASSWORD: $DB_PASSWORD" \
+    && echo "--- End Debugging ---"
+
 RUN set -e \
     && echo "--- Installing NPM Dependencies ---" \
     && npm install \
