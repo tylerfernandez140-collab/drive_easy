@@ -11,6 +11,9 @@ npm install
 echo "--- Building Frontend Assets ---
 npm run build
 
+echo "--- Discovering Laravel Packages ---"
+php artisan package:discover --ansi
+
 echo "--- Running Laravel Migrations ---"
 php artisan migrate --force
 
