@@ -36,15 +36,6 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy the rest of the application code
 COPY . .
 
-RUN echo "--- Debugging Database Environment Variables ---" \
-    && echo "DB_CONNECTION: $DB_CONNECTION" \
-    && echo "DB_HOST: $DB_HOST" \
-    && echo "DB_PORT: $DB_PORT" \
-    && echo "DB_DATABASE: $DB_DATABASE" \
-    && echo "DB_USERNAME: $DB_USERNAME" \
-    && echo "DB_PASSWORD: $DB_PASSWORD" \
-    && echo "--- End Debugging ---"
-
 RUN set -e \
     && echo "--- Installing NPM Dependencies ---" \
     && npm install \
@@ -53,8 +44,6 @@ RUN set -e \
     && echo "--- Discovering Laravel Packages ---" \
     && php artisan package:discover --ansi \
     && echo "--- Creating Storage Link ---" \
-    && php artisan storage:link \
-    && echo "--- Caching Laravel Configuration ---" \
     && php artisan config:cache \
     && echo "--- Caching Laravel Routes ---" \
     && php artisan route:cache \
@@ -62,8 +51,8 @@ RUN set -e \
     && php artisan view:cache \
     && echo "--- Build process completed successfully ---"
 
-# Expose port 8000 for the Laravel development server
-EXPOSE 8000
+# Expose port 9000 for PHP-FPM
+EXPOSE 9000
 
-# Command to run the Laravel development server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Start PHP-FPM
+CMD ["php-fpm"]
