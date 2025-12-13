@@ -11,6 +11,7 @@ use App\Models\CourseRegistration;
 use App\Models\Vehicle;
 use Carbon\Carbon;
 use App\Jobs\MakeVehicleAvailable; 
+use Illuminate\Validation\Rule;
 
 class AdminScheduleController extends Controller
 {
@@ -238,7 +239,49 @@ public function store(StoreScheduleRequest $request)
      */
     public function update(Request $request, string $id)
     {
-        //
+        $schedule = Schedule::findOrFail($id);
+
+        $validated = $request->validate([
+            'instructor_id' => ['required', 'exists:users,id'],
+            'course_registration_id' => ['required', 'exists:course_registrations,id'],
+            'date' => ['required', 'date', 'after_or_equal:today'],
+            'location' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'time' => ['nullable', Rule::in(['08:00', '10:00', '13:00', '15:00'])],
+            'vehicle_id' => ['nullable', 'exists:vehicles,id'],
+        ]);
+
+        $schedule->update($validated);
+
+        $isTheoretical = false;
+        $reg = CourseRegistration::find($validated['course_registration_id']);
+        if ($reg && $reg->course_type) {
+            $ct = strtolower($reg->course_type);
+            if (str_contains($ct, 'theoretical') || str_contains($ct, 'theory')) {
+                $isTheoretical = true;
+            }
+        }
+
+        $vehicleId = $validated['vehicle_id'] ?? null;
+
+        if (! $isTheoretical && $vehicleId) {
+            $vehicle = Vehicle::find($vehicleId);
+
+            if ($vehicle) {
+                $until = now()->addHours(2);
+
+                $vehicle->update([
+                    'status' => 'unavailable',
+                    'unavailable_until' => $until,
+                ]);
+
+                MakeVehicleAvailable::dispatch($vehicle->id)->delay($until);
+            }
+        }
+
+        return redirect()
+            ->route('admin.schedules.index')
+            ->with('success', 'Schedule updated successfully.');
     }
 
     /**

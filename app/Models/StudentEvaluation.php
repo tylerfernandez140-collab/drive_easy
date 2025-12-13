@@ -57,7 +57,7 @@ public function courseRegistration()
     
   public function hasPassed()
 {
-    return $this->remark === 'Passed'; 
+    return $this->remark === 'PASSED'; 
 }
 
 public function certificateUrl()

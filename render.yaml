@@ -1,0 +1,86 @@
+services:
+  # Web Service for Laravel Backend and React Frontend
+  - type: web
+    name: driveeasy-web
+    env: docker
+    dockerfilePath: Dockerfile
+    buildCommand: ./build.sh # Custom build script to handle both backend and frontend
+    startCommand: php artisan serve --host=0.0.0.0 --port=8000
+    healthCheckPath: /
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: pgsql # Assuming PostgreSQL for Render's free tier
+      - key: DB_HOST
+        value: ${driveeasy-database.internalHostname}
+      - key: DB_DATABASE
+        value: driveeasy
+      - key: DB_USERNAME
+        value: driveeasy_user
+      - key: DB_PASSWORD
+        generateValue: true
+      - key: VITE_APP_URL
+        value: ${driveeasy-web.url}
+      - key: APP_URL
+        value: ${driveeasy-web.url}
+      # Add other environment variables as needed, e.g., for mail, services, etc.
+
+  # Database Service (PostgreSQL)
+  - type: pserv
+    name: driveeasy-database
+    env: docker
+    image: postgres:14
+    disk:
+      name: driveeasy-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+    envVars:
+      - key: POSTGRES_DB
+        value: driveeasy
+      - key: POSTGRES_USER
+        value: driveeasy_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    
+  # Optional: Redis for Caching and Queues
+  # - type: redis
+  #   name: driveeasy-redis
+  #   ipAllowlist:
+  #     - source: all
+  #       description: Allow all traffic
+  #   maxmemoryPolicy: allkeys-lru
+  #   plan: starter # Or other suitable plan
+  #   envVars:
+  #     - key: REDIS_URL
+  #       value: redis://red-xxxxxxxxxxxxxxxxxxxx:6379
+
+  # Optional: Cron Job for scheduled tasks (e.g., queue worker)
+  # - type: cron
+  #   name: driveeasy-queue-worker
+  #   schedule: "*/5 * * * *" # Every 5 minutes
+  #   env: docker
+  #   buildCommand: ./build.sh
+  #   startCommand: php artisan queue:work --once --tries=3
+  #   envVars:
+  #     - key: APP_KEY
+  #       generateValue: true
+  #     - key: APP_ENV
+  #       value: production
+  #     - key: APP_DEBUG
+  #       value: false
+  #     - key: DB_CONNECTION
+  #       value: pgsql
+  #     - key: DB_HOST
+  #       value: ${driveeasy-database.internalHostname}
+  #     - key: DB_DATABASE
+  #       value: driveeasy
+  #     - key: DB_USERNAME
+  #       value: driveeasy_user
+  #     - key: DB_PASSWORD
+  #       generateValue: true
+      # Add other environment variables as needed

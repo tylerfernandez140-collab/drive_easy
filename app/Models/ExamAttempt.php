@@ -14,6 +14,8 @@ class ExamAttempt extends Model
         'score',
         'status',
         'attempt_number',
+        'total_score',
+        'percentage',
     ];
 
     /**

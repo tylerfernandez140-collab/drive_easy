@@ -1,0 +1,45 @@
+services:
+    mysql:
+        image: mysql:8.0
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: driveeasy
+            MYSQL_USER: driveeasy_user
+            MYSQL_PASSWORD: password
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - app-network
+
+    php:
+        ports:
+            - "8002:8002"
+        image: php:8.2-fpm
+        volumes:
+            - .:/var/www/html
+        networks:
+            - app-network
+        depends_on:
+            - mysql
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - "8081:80"
+        environment:
+            PMA_HOST: mysql
+            MYSQL_ROOT_PASSWORD: password
+        networks:
+            - app-network
+        depends_on:
+            - mysql
+
+networks:
+    app-network:
+        driver: bridge
+
+volumes:
+    mysql_data:
+        driver: local

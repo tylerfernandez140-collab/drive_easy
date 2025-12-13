@@ -89,11 +89,13 @@ public function store(Request $request)
         ->first();
     $attemptNumber = $latestAttempt ? $latestAttempt->attempt_number + 1 : 1;
 
-    ExamAttempt::create([
+    $examAttempt = ExamAttempt::create([
         'student_id' => $student->id,
         'score' => $earnedPoints,
         'status' => $status,
         'attempt_number' => $attemptNumber,
+        'total_score' => $totalPoints,
+        'percentage' => round($percentage, 2),
     ]);
 
     // Attempt to find a schedule for the course registration
@@ -107,7 +109,8 @@ public function store(Request $request)
         'scores' => $scores,
         'total_score' => $earnedPoints,
         'remark' => $status,
-    ];
+            'evaluated_by' => $schedule ? $schedule->instructor_id : null,
+        ];
 
     if ($schedule) {
         $evaluationData['schedule_id'] = $schedule->id;
@@ -129,23 +132,21 @@ public function store(Request $request)
         ],
         $evaluationData
     );
- $courseRegistration->update([
+
+    $courseRegistration->update([
         'course_status' => 'completed',
     ]);
     
-    return redirect()->back()->with([
+    // Log::info('Redirecting back from: ' . url()->previous());
+    return redirect()->route('exam.show', ['course_registration_id' => $courseRegistration->id])->with('result', [
         'result' => [
-            'score' => $earnedPoints,
-            'total' => $totalPoints,
-            'percentage' => round($percentage, 2),
-            'status' => $status,
+            'score' => $examAttempt->score,
+            'total' => $examAttempt->total_score,
+            'percentage' => $examAttempt->percentage,
+            'status' => $examAttempt->status,
         ]
     ]);
 }
-
-
-
-
 
 
     /**
@@ -153,48 +154,80 @@ public function store(Request $request)
      */
 
 
-public function show()
+public function show(Request $request)
 {
     $studentId = Auth::id();
     $student   = Auth::user();
 
-    $courseRegistration = $student->studentApplication->courseRegistrations()
-        ->where('course_type', 'Theoretical')
-        ->latest()
-        ->first();
+    $courseRegistration = null;
+    $questions = []; // Initialize $questions here
+    $totalPoints = 0; // Initialize totalPoints here
+
+    if ($request->has('course_registration_id')) {
+        $courseRegistration = CourseRegistration::where('id', $request->course_registration_id)
+            ->whereHas('studentApplication', function ($query) use ($student) {
+                $query->where('user_id', $student->id);
+            })
+            ->first();
+    }
 
     if (!$courseRegistration) {
-        return redirect()->back()->with('error', 'No theoretical course registration found.');
+        $courseRegistration = $student->studentApplication->courseRegistrations()
+            ->where('course_type', 'Theoretical')
+            ->latest()
+            ->first();
+    }
+
+    if (!$courseRegistration) {
+        return Inertia::render('Student/TheoreticalExam', [
+            'student'                => $student,
+            'questions'              => [], // No questions if no course registration
+            'result'                 => null,
+            'error'                  => 'No theoretical course registration found.',
+            'course_registration_id' => null,
+        ]);
+    }
+
+    $studentEvaluation = StudentEvaluation::where('student_id', $studentId)
+        ->where('course_registration_id', $courseRegistration->id)
+        ->first();
+
+    if ($studentEvaluation && isset($studentEvaluation->scores)) {
+        $questionIds = array_keys($studentEvaluation->scores);
+        $questions = ExamQuestion::whereIn('id', $questionIds)->get()->map(function ($q) {
+            return [
+                'id'       => $q->id,
+                'question' => $q->question,
+                'choices'  => is_string($q->choices) ? json_decode($q->choices, true) : $q->choices,
+            ];
+        });
+        $totalPoints = $questions->sum('points');
+    } else {
+        // If no student evaluation or scores, load all theoretical exam questions
+        $questions = ExamQuestion::all()->take(10)->map(function ($q) {
+            return [
+                'id'       => $q->id,
+                'question' => $q->question,
+                'choices'  => is_string($q->choices) ? json_decode($q->choices, true) : $q->choices,
+            ];
+        });
+        $totalPoints = $questions->sum('points');
     }
 
     $latestAttempt = ExamAttempt::where('student_id', $studentId)
-        ->orderByDesc('created_at')
-        ->first();
+                ->orderByDesc('created_at')
+                ->first();
 
-    $result = session('result');
+            $result = session('result');
 
-    if (!$result && $latestAttempt) {
-        $totalPoints = ExamQuestion::sum('points');
-        $percentage = $totalPoints > 0
-            ? ($latestAttempt->score / $totalPoints) * 100
-            : 0;
-
-        $result = [
-            'score'      => $latestAttempt->score,
-            'total'      => $totalPoints,
-            'percentage' => round($percentage, 2),
-            'status'     => $latestAttempt->status,
-        ];
-    }
-  $questions = ExamQuestion::limit(10)->get()->map(function ($q) {
-    return [
-        'id'       => $q->id,
-        'question' => $q->question,
-        'choices'  => is_string($q->choices) ? json_decode($q->choices, true) : $q->choices,
-    ];
-});
-
-
+            if (!$result && $latestAttempt) {
+                $result = [
+                    'score'      => $latestAttempt->score,
+                    'total'      => $latestAttempt->total_score,
+                    'percentage' => $latestAttempt->percentage,
+                    'status'     => $latestAttempt->status,
+                ];
+            }
 
     return Inertia::render('Student/TheoreticalExam', [
         'student'                => $student,
@@ -204,10 +237,6 @@ public function show()
         'course_registration_id' => $courseRegistration->id,
     ]);
 }
-
-
-
-
 
     /**
      * Show the form for editing the specified resource.
@@ -240,6 +269,12 @@ public function update(Request $request, $scheduleId)
     }
 
     return back()->with('success', 'Exam status updated to ' . $exam->exam_status);
+}
+
+public function start(Schedule $schedule)
+{
+    $schedule->update(['exam_status' => 'in_progress']);
+    return back()->with('success', 'Exam started successfully.');
 }
 
 

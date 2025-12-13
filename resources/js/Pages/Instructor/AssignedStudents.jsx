@@ -75,7 +75,29 @@ export default function AssignedStudents({ students }) {
                 {},
                 {
                     preserveState: true,
-                    onSuccess: () => toast.success("Student Assigned Successfully", { duration: 3000 }),
+                    onSuccess: () => toast.success("Exam Started Successfully", { duration: 3000 }),
+                }
+            );
+        } else if (courseType?.toLowerCase() === "practical") {
+            router.put(
+                route("instructor.exam.start", { schedule: scheduleId }),
+                {
+                    exam_status: "force_started",
+                },
+                {
+                    preserveState: true,
+                    onSuccess: () => toast.success("Exam Started Successfully", { duration: 3000 }),
+                }
+            );
+        } else if (courseType?.toLowerCase() === "practical") {
+            router.put(
+                route("instructor.exam.start", { schedule: scheduleId }),
+                {
+                    exam_status: "completed",
+                },
+                {
+                    preserveState: true,
+                    onSuccess: () => toast.success("Exam Started Successfully", { duration: 3000 }),
                 }
             );
         }

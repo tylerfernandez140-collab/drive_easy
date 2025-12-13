@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('student')->change();
+        Schema::table('exam_attempts', function (Blueprint $table) {
+            $table->integer('total_score')->after('attempt_number')->nullable();
+            $table->integer('percentage')->after('total_score')->nullable();
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('user')->change();
+        Schema::table('exam_attempts', function (Blueprint $table) {
+            $table->dropColumn('scores');
         });
     }
 };

@@ -16,7 +16,7 @@ Route::middleware(['auth', 'verified', 'instructor'])->prefix('instructor')->nam
             ->name('evaluatedStudents.index');
       Route::get('/profile', [ProfileController::class, 'instructor'])->name('profile.instructor');
       Route::resource('exam', ExamController::class);
-       Route::put('/exam/{schedule}/start', [ExamController::class, 'update'])
+       Route::put('/exam/{schedule}/start', [ExamController::class, 'start'])
     ->name('exam.start');
 
 });

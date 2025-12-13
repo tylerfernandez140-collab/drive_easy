@@ -15,9 +15,9 @@ class AdminApplicationController extends Controller
    public function index()
 {
     $applications = StudentApplication::with('user')
+        ->select('id', 'user_id', 'birth_certificate', 'gov_id', 'id_picture', 'marriage_contract', 'status', 'admin_remarks', 'created_at')
         ->latest()
         ->paginate(5);
-        // dd($applications->toArray());
 
     return Inertia::render('Admin/Applicants', [
         'applications' => $applications,

@@ -19,9 +19,11 @@ class CheckExamSchedule
         $query->where('user_id', $student->id);
     })->get();
 
-    $activeSchedule = $schedules->first(function ($schedule) use ($now) {
+    $activeSchedule = $schedules->first(function ($schedule) use ($now, $request) {
         return $schedule->date === $now->toDateString()
-               || $schedule->exam_status === 'force_started';
+               || $schedule->exam_status === 'force_started'
+               || $schedule->exam_status === 'in_progress'
+               || ($schedule->exam_status === 'completed' && $request->session()->has('result'));
     });
 
     if (!$activeSchedule) {

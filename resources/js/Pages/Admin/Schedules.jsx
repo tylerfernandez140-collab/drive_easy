@@ -284,11 +284,12 @@ export default function Schedules({
                                             let label = `${vehicle.name} (${vehicle.type.replace(/_/g, ' ')})`;
                                             if (isUnavailable && vehicle.unavailable_until) {
                                                 const until = new Date(vehicle.unavailable_until);
-                                                const localTime = until.toLocaleTimeString([], {
+                                                const localDate = until.toLocaleDateString('en-US');
+                                                const localTime = until.toLocaleTimeString('en-US', {
                                                     hour: '2-digit',
                                                     minute: '2-digit',
                                                 });
-                                                label += ` – unavailable until ${localTime}`;
+                                                label += ` – unavailable until ${localDate} ${localTime}`;
                                             }
 
                                             return (

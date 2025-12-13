@@ -3,7 +3,8 @@ import { Head, usePage, router, Link } from "@inertiajs/react";
 import { useState } from "react";
 import { HiMiniArrowLeft } from "react-icons/hi2";
 
-export default function TheoreticalExam({ student, questions, result, error, course_registration_id }) {
+export default function TheoreticalExam({ student, questions, error, course_registration_id }) {
+    const { result } = usePage().props.flash;
     const [answers, setAnswers] = useState({});
 
     const handleAnswerChange = (questionId, choice) => {
@@ -72,7 +73,7 @@ export default function TheoreticalExam({ student, questions, result, error, cou
                             <div className="p-8">
                                 <div className="text-center mb-8">
                                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mb-4">
-                                        {result.status === "PASSED" ? (
+                                        {result.result.status === "PASSED" ? (
                                             <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
@@ -90,19 +91,19 @@ export default function TheoreticalExam({ student, questions, result, error, cou
                                     <div className="bg-slate-50 rounded-xl p-5 text-center">
                                         <p className="text-sm font-medium text-slate-500 mb-1">Score</p>
                                         <p className="text-3xl font-bold text-slate-800">
-                                            {result.score}
-                                            <span className="text-lg font-normal text-slate-500">/{result.total}</span>
+                                            {result.result.score}
+                                            <span className="text-lg font-normal text-slate-500">/{result.result.total}</span>
                                         </p>
                                     </div>
                                     <div className="bg-slate-50 rounded-xl p-5 text-center">
                                         <p className="text-sm font-medium text-slate-500 mb-1">Percentage</p>
-                                        <p className="text-3xl font-bold text-slate-800">{result.percentage}%</p>
+                                        <p className="text-3xl font-bold text-slate-800">{result.result.percentage}%</p>
                                     </div>
-                                    <div className={`rounded-xl p-5 text-center ${result.status === "PASSED" ? "bg-emerald-50" : "bg-red-50"}`}>
+                                    <div className={`rounded-xl p-5 text-center ${result.result.status === "PASSED" ? "bg-emerald-50" : "bg-red-50"}`}>
                                         <p className="text-sm font-medium text-slate-500 mb-1">Status</p>
-                                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${result.status === "PASSED" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
-                                            <div className={`w-2 h-2 rounded-full mr-2 ${result.status === "PASSED" ? "bg-emerald-500" : "bg-red-500"}`}></div>
-                                            {result.status}
+                                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${result.result.status === "PASSED" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                                            <div className={`w-2 h-2 rounded-full mr-2 ${result.result.status === "PASSED" ? "bg-emerald-500" : "bg-red-500"}`}></div>
+                                            {result.result.status}
                                         </div>
                                     </div>
                                 </div>
@@ -110,22 +111,22 @@ export default function TheoreticalExam({ student, questions, result, error, cou
                                 <div className="mb-8">
                                     <div className="flex justify-between text-sm text-slate-500 mb-2">
                                         <span>Performance</span>
-                                        <span>{result.percentage}%</span>
+                                        <span>{result.result.percentage}%</span>
                                     </div>
                                     <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                                         <div
-                                            className={`h-3 rounded-full transition-all duration-700 ${result.status === "PASSED"
+                                            className={`h-3 rounded-full transition-all duration-700 ${result.result.status === "PASSED"
                                                 ? "bg-gradient-to-r from-emerald-500 to-green-500"
                                                 : "bg-gradient-to-r from-red-500 to-orange-500"}`}
-                                            style={{ width: `${result.percentage}%` }}
+                                            style={{ width: `${result.result.percentage}%` }}
                                         ></div>
                                     </div>
                                 </div>
 
-                                <div className={`rounded-xl p-5 ${result.status === "PASSED" ? "bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100" : "bg-gradient-to-r from-red-50 to-orange-50 border border-red-100"}`}>
+                                <div className={`rounded-xl p-5 ${result.result.status === "PASSED" ? "bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100" : "bg-gradient-to-r from-red-50 to-orange-50 border border-red-100"}`}>
                                     <div className="flex items-center">
                                         <div className="flex-shrink-0 mr-4">
-                                            {result.status === "PASSED" ? (
+                                            {result.result.status === "PASSED" ? (
                                                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                                                     <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -140,11 +141,11 @@ export default function TheoreticalExam({ student, questions, result, error, cou
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className={`font-semibold ${result.status === "PASSED" ? "text-emerald-800" : "text-red-800"}`}>
-                                                {result.status === "PASSED" ? "Congratulations!" : "Keep practicing!"}
+                                            <h3 className={`font-semibold ${result.result.status === "PASSED" ? "text-emerald-800" : "text-red-800"}`}>
+                                                {result.result.status === "PASSED" ? "Congratulations!" : "Keep practicing!"}
                                             </h3>
-                                            <p className={`mt-1 text-sm ${result.status === "PASSED" ? "text-emerald-700" : "text-red-700"}`}>
-                                                {result.status === "PASSED"
+                                            <p className={`mt-1 text-sm ${result.result.status === "PASSED" ? "text-emerald-700" : "text-red-700"}`}>
+                                                {result.result.status === "PASSED"
                                                     ? "You've successfully passed the theoretical examination."
                                                     : "Review the material and try again. You'll get it next time!"}
                                             </p>

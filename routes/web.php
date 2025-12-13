@@ -25,6 +25,8 @@ Route::get('/', function () {
     ]);
 });
 
+
+
 // routes/web.php
 // routes/web.php
 

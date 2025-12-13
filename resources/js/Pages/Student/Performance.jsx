@@ -25,6 +25,8 @@ export default function Performance() {
         enrolledCourses = [],
     } = usePage().props;
 
+    const { result } = usePage().props.flash;
+
     examSchedule = Array.isArray(examSchedule)
         ? examSchedule
         : Object.values(examSchedule || {});
@@ -37,6 +39,38 @@ export default function Performance() {
                 .map(type => type.toLowerCase())
         ),
     ];
+
+    const renderResultCard = (result) => {
+        if (!result) return null;
+
+        const isPassed = result.status === 'PASSED';
+
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div className="p-6 md:p-8">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <div className="flex items-center">
+                                <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isPassed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}
+                                >
+                                    {isPassed ? 'Passed' : 'Failed'}
+                                </span>
+                                <span className="ml-3 text-sm font-medium text-gray-500">
+                                    EXAM RESULT
+                                </span>
+                            </div>
+                            <h2 className="mt-2 text-xl font-semibold text-gray-900">
+                                Your Score: {result.score} / {result.total}
+                            </h2>
+                            <p className="text-sm text-gray-600">Percentage: {result.percentage}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
 
 
@@ -62,7 +96,7 @@ export default function Performance() {
             <div className="space-y-4">
                 {examSchedule.map((item, index) => {
                     const scheduleDateTime = new Date(item.datetime);
-                    const isAvailable = now >= scheduleDateTime || item.exam_status === 'force_started';
+                    const isAvailable = item.exam_status === 'in_progress' || item.exam_status === 'completed' || item.exam_status === 'force_started';
 
                     return (
                         <div
@@ -263,6 +297,8 @@ export default function Performance() {
                                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                                     {courseType.charAt(0).toUpperCase() + courseType.slice(1).toLowerCase()} Performance
                                 </h2>
+
+                                {result && renderResultCard(result)}
 
                                 {courseType === 'theoretical' && !evaluation && renderExamCard(
                                     examSchedule.filter((item) => item.course.toLowerCase() === courseType)
