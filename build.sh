@@ -21,12 +21,14 @@ echo "--- Running Database Seeders ---"
 php artisan db:seed --force
 
 echo "--- Checking Database Environment Variables ---"
-echo "DB_CONNECTION: $DB_CONNECTION"
-echo "DB_HOST: $DB_HOST"
-echo "DB_PORT: $DB_PORT"
-echo "DB_DATABASE: $DB_DATABASE"
-echo "DB_USERNAME: $DB_USERNAME"
-echo "DB_PASSWORD: $DB_PASSWORD"
+mkdir -p storage/logs
+echo "DB_CONNECTION: $DB_CONNECTION" >> storage/logs/env_vars.log
+echo "DB_HOST: $DB_HOST" >> storage/logs/env_vars.log
+echo "DB_PORT: $DB_PORT" >> storage/logs/env_vars.log
+echo "DB_DATABASE: $DB_DATABASE" >> storage/logs/env_vars.log
+echo "DB_USERNAME: $DB_USERNAME" >> storage/logs/env_vars.log
+echo "DB_PASSWORD: $DB_PASSWORD" >> storage/logs/env_vars.log
+echo "Environment variables logged to storage/logs/env_vars.log"
 
 echo "--- Creating Storage Link ---
 php artisan storage:link
