@@ -28,6 +28,9 @@ COPY composer.json composer.lock ./
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+# Install Composer dependencies
+RUN composer install --no-dev --optimize-autoloader
+
 # Copy the rest of the application code
 COPY . .
 

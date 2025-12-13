@@ -3,8 +3,7 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-echo "--- Installing Composer Dependencies ---"
-composer install --no-dev --optimize-autoloader
+
 
 echo "--- Installing NPM Dependencies ---
 npm install
